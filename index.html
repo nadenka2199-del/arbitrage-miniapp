@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Арбитраж: как это устроено</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Unbounded:wght@600;800&display=swap">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root{
+    /* фирменные цвета Вадима: тёмный #121212 + золото #C9A227.
+       нейтральные уведены в тёплую сторону, к акценту, а не в чистый серый */
+    --bg:#121212; --surface:#1A1A17; --surface2:#221F1A;
+    --line:#2E2A22; --text:#F2F0EA; --muted:#9A948A;
+    --gold:#C9A227; --green:#3FB950; --red:#E5484D;
+    --display:"Unbounded","Golos Text",system-ui,sans-serif;
+    --body:"Golos Text",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:var(--body);line-height:1.45;overflow-x:hidden;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:520px;margin:0 auto;padding:20px 16px 40px}
+
+  /* ---------- главный экран ---------- */
+  .head{padding:8px 0 20px}
+  .head h1{margin:0 0 6px;font-family:var(--display);font-size:23px;font-weight:800;
+    letter-spacing:-.02em;text-wrap:balance;line-height:1.2}
+  .head p{margin:0;color:var(--muted);font-size:14px}
+  .progress{margin:16px 0 22px}
+  .bar{height:4px;background:var(--line);border-radius:2px;overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--gold);width:0;transition:width .35s ease}
+  .progress span{display:block;margin-top:8px;font-size:12px;color:var(--muted)}
+
+  .menu{display:flex;flex-direction:column;gap:10px}
+  .item{display:flex;align-items:center;gap:14px;background:var(--surface);
+    border:1px solid var(--line);border-radius:14px;padding:16px;cursor:pointer;
+    transition:border-color .2s,transform .08s}
+  .item:active{transform:scale(.985)}
+  .item.done{border-color:rgba(201,162,39,.45)}
+  .item .num{font-family:var(--display);font-size:11px;font-weight:600;color:var(--gold);
+    letter-spacing:.06em;min-width:24px}
+  .item .txt{flex:1;min-width:0}
+  .item .txt b{display:block;font-size:16px;font-weight:700}
+  .item .txt small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+  .item .tick{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--line);
+    display:grid;place-items:center;font-size:11px;color:var(--bg);flex:none}
+  .item.done .tick{background:var(--gold);border-color:var(--gold)}
+  .item.done .tick::after{content:"✓";font-weight:800}
+
+  .legal{margin-top:26px;padding-top:16px;border-top:1px solid var(--line);
+    color:#6e6e6e;font-size:11px;line-height:1.5}
+
+  /* ---------- экран раздела ---------- */
+  .screen{display:none}
+  .screen.on{display:block}
+  .topbar{display:flex;align-items:center;gap:12px;padding:6px 0 18px}
+  .back{background:var(--surface);border:1px solid var(--line);color:var(--text);
+    border-radius:10px;padding:8px 12px;font-size:14px;cursor:pointer}
+  .topbar h2{margin:0;font-size:17px;font-weight:700}
+
+  /* карточки */
+  .deck{position:relative}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:18px;
+    padding:26px 22px;min-height:300px;display:flex;flex-direction:column;justify-content:center}
+  .card .big{font-family:var(--display);font-size:21px;font-weight:600;letter-spacing:-.02em;
+    margin:0 0 14px;text-wrap:balance;line-height:1.32}
+  .card .small{font-size:15px;color:var(--muted);margin:0}
+  .dots{display:flex;gap:6px;justify-content:center;margin:16px 0 14px}
+  .dots i{width:6px;height:6px;border-radius:50%;background:var(--line)}
+  .dots i.on{background:var(--gold);width:18px;border-radius:3px}
+  .nav{display:flex;gap:10px}
+  .nav button{flex:1;padding:14px;border-radius:12px;border:1px solid var(--line);
+    background:var(--surface2);color:var(--text);font-size:15px;font-weight:600;cursor:pointer}
+  .nav button.primary{background:var(--gold);border-color:var(--gold);color:#1a1500}
+  .nav button:disabled{opacity:.35}
+
+  /* словарь */
+  .term{background:var(--surface);border:1px solid var(--line);border-radius:14px;
+    padding:16px;margin-bottom:10px}
+  .term b{display:block;color:var(--gold);font-size:15px;margin-bottom:5px}
+  .term p{margin:0;font-size:14px;color:#cfcfcf}
+
+  /* калькулятор */
+  .intro{color:var(--muted);font-size:14px;margin:0 0 20px}
+  .field{margin-bottom:18px}
+  .field .row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+  .field label{font-size:14px;color:#d5d5d5}
+  .field .val{font-size:15px;font-weight:700;color:var(--gold);font-variant-numeric:tabular-nums}
+  input[type=range]{width:100%;-webkit-appearance:none;appearance:none;height:3px;
+    background:var(--line);border-radius:2px;outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;
+    border-radius:50%;background:var(--gold);cursor:pointer;border:3px solid var(--bg)}
+  input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;
+    background:var(--gold);cursor:pointer;border:3px solid var(--bg)}
+
+  .result{background:var(--surface);border:1px solid var(--line);border-radius:16px;
+    padding:20px;margin-top:22px}
+  .gross{font-size:13px;color:var(--muted);margin:0 0 4px}
+  .gross-v{font-family:var(--display);font-size:29px;font-weight:800;color:var(--green);
+    margin:0 0 16px;font-variant-numeric:tabular-nums}
+  .costs{border-top:1px solid var(--line);padding-top:14px}
+  .cost{display:flex;justify-content:space-between;font-size:14px;margin-bottom:8px;color:#c4c4c4}
+  .cost span:last-child{color:var(--red);font-variant-numeric:tabular-nums}
+  .total{border-top:1px solid var(--line);margin-top:12px;padding-top:14px;
+    display:flex;justify-content:space-between;align-items:baseline}
+  .total span{font-size:14px;color:var(--muted)}
+  .total b{font-family:var(--display);font-size:27px;font-weight:800;
+    font-variant-numeric:tabular-nums}
+  .verdict{margin-top:14px;padding:14px;border-radius:12px;background:var(--surface2);
+    font-size:14px;line-height:1.5}
+  .note{color:#6e6e6e;font-size:12px;margin-top:16px;line-height:1.5}
+
+  /* оффер */
+  .block{background:var(--surface);border:1px solid var(--line);
+    border-radius:16px;padding:20px;margin-bottom:14px}
+  .block.paid{border-color:rgba(201,162,39,.45)}
+  .block h3{margin:0 0 14px;font-size:16px;font-weight:700}
+  .block.paid h3{color:var(--gold)}
+  .block ul{margin:0;padding-left:18px}
+  .block li{font-size:14px;color:#cfcfcf;margin-bottom:9px}
+  .cta{display:block;width:100%;padding:17px;border-radius:14px;background:var(--gold);
+    color:#1a1500;font-size:16px;font-weight:800;text-align:center;text-decoration:none;
+    border:none;cursor:pointer;margin-top:6px}
+  .honest{color:var(--muted);font-size:13px;margin-top:14px;text-align:center;line-height:1.5}
+
+  .stub{text-align:center;padding:60px 20px;color:var(--muted)}
+
+  button:focus-visible,a:focus-visible,input:focus-visible,.item:focus-visible{
+    outline:2px solid var(--gold);outline-offset:3px}
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="home" class="screen on"></div>
+  <div id="detail" class="screen"></div>
+</div>
+
+<script>
+/* ---- Telegram ---- */
+try {
+  if (window.Telegram && Telegram.WebApp) {
+    Telegram.WebApp.ready();
+    Telegram.WebApp.expand();
+  }
+} catch (e) {}
+
+/* ---- запасные данные: чтобы прототип открывался и просто двойным кликом,
+        когда fetch к data.json заблокирован протоколом file:// ---- */
+var FALLBACK = {"app": {"title": "Арбитраж: как это устроено", "subtitle": "Пять разделов. Минут на пятнадцать.", "channel_url": "https://t.me/firevadim", "disclaimer": "Материалы носят информационный характер и не являются индивидуальной инвестиционной рекомендацией."}, "sections": [{"id": "what", "num": "01", "title": "Что такое арбитраж", "hint": "На пальцах, без терминов", "type": "cards", "cards": [{"big": "Одна и та же вещь может стоить по-разному в двух местах. В один и тот же момент.", "small": "Это не ошибка и не редкость. Это нормальное свойство разных рынков."}, {"big": "В аэропорту евро по 105. В банке через дорогу — по 98.", "small": "Разница семь рублей. Один и тот же евро, один и тот же день. И никто этому не удивляется."}, {"big": "На бирже происходит то же самое.", "small": "Одна валютная пара, две площадки. Цены на них расходятся — просто разница меньше, а мест больше."}, {"big": "Арбитраж — это забрать разницу, которая уже есть.", "small": "Не угадать, куда пойдёт цена завтра. Работать с фактом, а не с прогнозом."}, {"big": "Поэтому здесь не нужны прогнозы аналитиков.", "small": "Нужно увидеть расхождение, которое существует прямо сейчас, и успеть его забрать."}, {"big": "Разница небольшая и живёт недолго.", "small": "Вся работа — в скорости и в том, чтобы не отдать эту разницу обратно в виде издержек. Про издержки — в разделе 04."}]}, {"id": "how", "num": "02", "title": "Как проходит сделка", "hint": "Шаг за шагом, от начала до конца", "type": "cards", "cards": [{"big": "Шаг 1. Два окна на экране.", "small": "Цена одного и того же актива на двух площадках. Ты смотришь не на график, а на разницу между цифрами."}, {"big": "Шаг 2. Появляется расхождение.", "small": "Разница становится больше обычной. Это и есть момент, ради которого всё."}, {"big": "Шаг 3. Проверка.", "small": "Хватит ли разницы, чтобы покрыть комиссии обеих площадок и проскальзывание. Чаще всего — не хватает, и сделки не будет."}, {"big": "Шаг 4. Вход.", "small": "Одновременно на обеих площадках. Не «сначала тут, потом посмотрим» — одновременно, иначе смысл теряется."}, {"big": "Шаг 5. Выход.", "small": "Когда цены сходятся обратно. Позиция закрывается, разница фиксируется."}, {"big": "И девяносто процентов времени не происходит ничего.", "small": "Ты просто сидишь и смотришь на две цифры. Драмы здесь нет — драма у тех, кто угадывает."}]}, {"id": "glossary", "num": "03", "title": "Словарь", "hint": "Восемь слов, которые встретятся", "type": "glossary", "terms": [{"term": "Спред", "def": "Разница между ценой покупки и ценой продажи. Ты всегда покупаешь чуть дороже и продаёшь чуть дешевле — вот эта щель и есть спред."}, {"term": "Проскальзывание", "def": "Ты нажал кнопку по одной цене, а сделка исполнилась по другой, чуть хуже. Потому что за доли секунды цена успела уехать."}, {"term": "Комиссия", "def": "Плата площадке за сделку. Берётся с каждой операции, и в арбитраже платить приходится дважды — на обеих площадках."}, {"term": "Ликвидность", "def": "Насколько легко купить или продать, не сдвинув цену. Где ликвидности мало, там проскальзывание больше."}, {"term": "Плечо", "def": "Возможность работать суммой больше собственной. Увеличивает и прибыль, и убыток. На старте не нужно."}, {"term": "Своп", "def": "Плата за перенос позиции на следующий день. Незаметная мелочь, которая съедает прибыль, если позиция висит долго."}, {"term": "Котировка", "def": "Текущая цена актива на конкретной площадке. У разных площадок в один момент котировки разные — на этом всё и построено."}, {"term": "Объём", "def": "Размер сделки. От него зависит и абсолютная прибыль, и размер комиссий — они считаются в процентах."}]}, {"id": "calc", "num": "04", "title": "Куда девается прибыль", "hint": "Посчитай на своих цифрах", "type": "calculator", "intro": "Разница в цене — это ещё не прибыль. Подставь свои значения и посмотри, что останется после издержек.", "fields": [{"key": "amount", "label": "Сумма сделки", "unit": "₽", "min": 10000, "max": 1000000, "step": 10000, "default": 200000}, {"key": "spread", "label": "Разница в цене", "unit": "%", "min": 0.05, "max": 2, "step": 0.05, "default": 0.4}, {"key": "fee1", "label": "Комиссия площадки 1", "unit": "%", "min": 0, "max": 0.5, "step": 0.01, "default": 0.08}, {"key": "fee2", "label": "Комиссия площадки 2", "unit": "%", "min": 0, "max": 0.5, "step": 0.01, "default": 0.08}, {"key": "slip", "label": "Проскальзывание", "unit": "%", "min": 0, "max": 0.5, "step": 0.01, "default": 0.12}], "note": "Значения по умолчанию — условный пример, а не реальные тарифы конкретных площадок. Подставляй свои."}, {"id": "next", "num": "05", "title": "Что дальше", "hint": "Где заканчивается бесплатное", "type": "offer", "free_title": "Здесь ты разобрался в том, ЧТО это и ПОЧЕМУ работает", "free_items": ["откуда берётся разница между площадками", "как выглядит сделка от начала до конца", "какие издержки её съедают и почему большинство расхождений не стоит брать"], "paid_title": "Дальше начинается КАК ИМЕННО", "paid_items": ["какие площадки и связки работают, а какие съедают всё комиссиями", "как считать порог входа в сделку до того, как нажал кнопку", "риск-менеджмент: сколько ставить и когда не входить вообще", "разборы реальных сделок, в том числе неудачных", "живые эфиры дважды в неделю и чат с вопросами"], "cta": "Открыть закрытый канал", "honest": "Гарантий доходности здесь нет и не будет. Это работа, которая требует времени, дисциплины и внимания."}]};
+
+var DATA = null, DONE = {};
+try { DONE = JSON.parse(localStorage.getItem('arb_done') || '{}'); } catch (e) { DONE = {}; }
+function saveDone(){ try { localStorage.setItem('arb_done', JSON.stringify(DONE)); } catch(e){} }
+
+var home = document.getElementById('home'), detail = document.getElementById('detail');
+
+function esc(s){ return String(s).replace(/[&<>"]/g, function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+function money(n){ return Math.round(n).toLocaleString('ru-RU') + ' ₽'; }
+
+/* ---------- главный экран ---------- */
+function renderHome(){
+  var s = DATA.sections, total = s.length, done = s.filter(function(x){return DONE[x.id];}).length;
+  home.innerHTML =
+    '<div class="head"><h1>' + esc(DATA.app.title) + '</h1><p>' + esc(DATA.app.subtitle) + '</p></div>' +
+    '<div class="progress"><div class="bar"><i style="width:' + (done/total*100) + '%"></i></div>' +
+    '<span>Пройдено ' + done + ' из ' + total + '</span></div>' +
+    '<div class="menu">' + s.map(function(sec){
+      return '<div class="item' + (DONE[sec.id] ? ' done' : '') + '" tabindex="0" role="button" data-id="' + sec.id + '">' +
+        '<div class="num">' + esc(sec.num) + '</div>' +
+        '<div class="txt"><b>' + esc(sec.title) + '</b><small>' + esc(sec.hint) + '</small></div>' +
+        '<div class="tick"></div></div>';
+    }).join('') + '</div>' +
+    '<div class="legal">' + esc(DATA.app.disclaimer) + '</div>';
+
+  home.querySelectorAll('.item').forEach(function(el){
+    el.onclick = function(){ openSection(el.dataset.id); };
+    el.onkeydown = function(e){
+      if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); openSection(el.dataset.id); }
+    };
+  });
+}
+
+function show(which){
+  home.classList.toggle('on', which === 'home');
+  detail.classList.toggle('on', which === 'detail');
+  window.scrollTo(0, 0);
+}
+
+function markDone(id){ DONE[id] = true; saveDone(); }
+
+function topbar(sec){
+  return '<div class="topbar"><button class="back" id="back">←</button><h2>' +
+    esc(sec.title) + '</h2></div>';
+}
+function bindBack(){
+  var b = document.getElementById('back');
+  if (b) b.onclick = function(){ renderHome(); show('home'); };
+}
+
+/* ---------- раздел ---------- */
+function openSection(id){
+  var sec = DATA.sections.filter(function(x){ return x.id === id; })[0];
+  if (!sec) return;
+  if (sec.type === 'cards')      renderCards(sec);
+  if (sec.type === 'glossary')   renderGlossary(sec);
+  if (sec.type === 'calculator') renderCalc(sec);
+  if (sec.type === 'offer')      renderOffer(sec);
+  show('detail');
+}
+
+/* карточки со свайпом */
+function renderCards(sec){
+  var i = 0;
+  function draw(){
+    var c = sec.cards[i];
+    detail.innerHTML = topbar(sec) +
+      '<div class="deck"><div class="card" id="card">' +
+        '<p class="big">' + esc(c.big) + '</p>' +
+        '<p class="small">' + esc(c.small) + '</p></div>' +
+      '<div class="dots">' + sec.cards.map(function(_, k){
+        return '<i class="' + (k === i ? 'on' : '') + '"></i>'; }).join('') + '</div>' +
+      '<div class="nav">' +
+        '<button id="prev"' + (i === 0 ? ' disabled' : '') + '>Назад</button>' +
+        '<button id="next" class="primary">' +
+          (i === sec.cards.length - 1 ? 'Готово' : 'Дальше') + '</button>' +
+      '</div></div>';
+    bindBack();
+    document.getElementById('prev').onclick = function(){ if (i > 0){ i--; draw(); } };
+    document.getElementById('next').onclick = function(){
+      if (i < sec.cards.length - 1){ i++; draw(); }
+      else { markDone(sec.id); renderHome(); show('home'); }
+    };
+    var card = document.getElementById('card'), x0 = null;
+    card.addEventListener('touchstart', function(e){ x0 = e.touches[0].clientX; }, {passive:true});
+    card.addEventListener('touchend', function(e){
+      if (x0 === null) return;
+      var dx = e.changedTouches[0].clientX - x0; x0 = null;
+      if (dx < -45 && i < sec.cards.length - 1){ i++; draw(); }
+      if (dx > 45 && i > 0){ i--; draw(); }
+    }, {passive:true});
+  }
+  draw();
+}
+
+function renderGlossary(sec){
+  detail.innerHTML = topbar(sec) + sec.terms.map(function(t){
+    return '<div class="term"><b>' + esc(t.term) + '</b><p>' + esc(t.def) + '</p></div>';
+  }).join('') +
+  '<div class="nav"><button class="primary" id="ok">Понятно</button></div>';
+  bindBack();
+  document.getElementById('ok').onclick = function(){
+    markDone(sec.id); renderHome(); show('home');
+  };
+}
+
+/* калькулятор */
+function renderCalc(sec){
+  var v = {};
+  sec.fields.forEach(function(f){ v[f.key] = f.default; });
+
+  detail.innerHTML = topbar(sec) +
+    '<p class="intro">' + esc(sec.intro) + '</p>' +
+    sec.fields.map(function(f){
+      return '<div class="field"><div class="row"><label>' + esc(f.label) + '</label>' +
+        '<span class="val" id="v_' + f.key + '"></span></div>' +
+        '<input type="range" id="r_' + f.key + '" min="' + f.min + '" max="' + f.max +
+        '" step="' + f.step + '" value="' + f.default + '"></div>';
+    }).join('') +
+    '<div class="result" id="res"></div>' +
+    '<p class="note">' + esc(sec.note) + '</p>' +
+    '<div class="nav" style="margin-top:18px"><button class="primary" id="ok">Понятно</button></div>';
+  bindBack();
+
+  function calc(){
+    var gross  = v.amount * v.spread / 100;
+    var c1     = v.amount * v.fee1  / 100;
+    var c2     = v.amount * v.fee2  / 100;
+    var slip   = v.amount * v.slip  / 100;
+    var net    = gross - c1 - c2 - slip;
+    var breakeven = v.fee1 + v.fee2 + v.slip;
+
+    sec.fields.forEach(function(f){
+      var el = document.getElementById('v_' + f.key);
+      el.textContent = f.unit === '₽'
+        ? v[f.key].toLocaleString('ru-RU') + ' ₽'
+        : v[f.key].toFixed(2) + ' %';
+    });
+
+    var verdict = net > 0
+      ? 'Сделка в плюсе — но посмотри, какая часть разницы ушла на издержки.'
+      : 'Сделка в минусе. Разница есть, а прибыли нет — её целиком съели издержки.';
+
+    document.getElementById('res').innerHTML =
+      '<p class="gross">На калькуляторе</p>' +
+      '<p class="gross-v">' + money(gross) + '</p>' +
+      '<div class="costs">' +
+        '<div class="cost"><span>Комиссия площадки 1</span><span>−' + money(c1) + '</span></div>' +
+        '<div class="cost"><span>Комиссия площадки 2</span><span>−' + money(c2) + '</span></div>' +
+        '<div class="cost"><span>Проскальзывание</span><span>−' + money(slip) + '</span></div>' +
+      '</div>' +
+      '<div class="total"><span>В реальности</span><b style="color:' +
+        (net > 0 ? 'var(--green)' : 'var(--red)') + '">' + money(net) + '</b></div>' +
+      '<div class="verdict">' + verdict +
+        '<br><br>Чтобы выйти в ноль, разница должна быть не меньше <b style="color:var(--gold)">' +
+        breakeven.toFixed(2) + ' %</b>.</div>';
+  }
+
+  sec.fields.forEach(function(f){
+    document.getElementById('r_' + f.key).oninput = function(e){
+      v[f.key] = parseFloat(e.target.value); calc();
+    };
+  });
+  calc();
+
+  document.getElementById('ok').onclick = function(){
+    markDone(sec.id); renderHome(); show('home');
+  };
+}
+
+function renderOffer(sec){
+  detail.innerHTML = topbar(sec) +
+    '<div class="block"><h3>' + esc(sec.free_title) + '</h3><ul>' +
+      sec.free_items.map(function(i){ return '<li>' + esc(i) + '</li>'; }).join('') +
+    '</ul></div>' +
+    '<div class="block paid"><h3>' + esc(sec.paid_title) + '</h3><ul>' +
+      sec.paid_items.map(function(i){ return '<li>' + esc(i) + '</li>'; }).join('') +
+    '</ul></div>' +
+    '<a class="cta" id="cta" href="' + esc(DATA.app.channel_url) + '" target="_blank" rel="noopener">' +
+      esc(sec.cta) + '</a>' +
+    '<p class="honest">' + esc(sec.honest) + '</p>';
+  bindBack();
+  document.getElementById('cta').onclick = function(){
+    markDone(sec.id);
+    try { if (window.Telegram && Telegram.WebApp) Telegram.WebApp.openTelegramLink(DATA.app.channel_url); } catch(e){}
+  };
+}
+
+/* ---------- загрузка ---------- */
+fetch('data.json?v=' + Date.now())
+  .then(function(r){ if (!r.ok) throw new Error('http'); return r.json(); })
+  .then(function(j){ DATA = j; renderHome(); })
+  .catch(function(){
+    if (FALLBACK){ DATA = FALLBACK; renderHome(); return; }
+    home.innerHTML = '<div class="stub">Не удалось загрузить данные.<br>' +
+      'Проверь, что рядом с index.html лежит файл data.json.</div>';
+  });
+</script>
+</body>
+</html>
