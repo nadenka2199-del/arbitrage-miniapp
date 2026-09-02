@@ -10,6 +10,19 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Unbounded:wght@600;800&display=swap">
+<!-- Yandex.Metrika counter -->
+<script type="text/javascript">
+    (function(m,e,t,r,i,k,a){
+        m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+        m[i].l=1*new Date();
+        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+    })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=112174424', 'ym');
+
+    ym(112174424, 'init', {ssr:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
+</script>
+<noscript><div><img src="https://mc.yandex.ru/watch/112174424" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+<!-- /Yandex.Metrika counter -->
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
   :root{
@@ -55,6 +68,7 @@
 
   .legal{margin-top:26px;padding-top:16px;border-top:1px solid var(--line);
     color:#6e6e6e;font-size:11px;line-height:1.5}
+  .policy-link{color:#8a8378;text-decoration:underline}
 
   /* ---------- экран раздела ---------- */
   .screen{display:none}
@@ -146,6 +160,12 @@
 </div>
 
 <script>
+/* ---- цели Метрики ---- */
+var YM_ID = 112174424;
+function goal(name){
+  try { if (typeof ym === 'function') ym(YM_ID, 'reachGoal', name); } catch (e) {}
+}
+
 /* ---- Telegram ---- */
 try {
   if (window.Telegram && Telegram.WebApp) {
@@ -181,7 +201,9 @@ function renderHome(){
         '<div class="txt"><b>' + esc(sec.title) + '</b><small>' + esc(sec.hint) + '</small></div>' +
         '<div class="tick"></div></div>';
     }).join('') + '</div>' +
-    '<div class="legal">' + esc(DATA.app.disclaimer) + '</div>';
+    '<div class="legal">' + esc(DATA.app.disclaimer) +
+      '<br><br>Приложение использует файлы cookie для анонимной статистики. ' +
+      '<a href="policy.html" class="policy-link">Политика обработки данных</a></div>';
 
   home.querySelectorAll('.item').forEach(function(el){
     el.onclick = function(){ openSection(el.dataset.id); };
@@ -197,7 +219,7 @@ function show(which){
   window.scrollTo(0, 0);
 }
 
-function markDone(id){ DONE[id] = true; saveDone(); }
+function markDone(id){ DONE[id] = true; saveDone(); goal('done_' + id); }
 
 function topbar(sec){
   return '<div class="topbar"><button class="back" id="back">←</button><h2>' +
@@ -212,6 +234,7 @@ function bindBack(){
 function openSection(id){
   var sec = DATA.sections.filter(function(x){ return x.id === id; })[0];
   if (!sec) return;
+  goal('open_' + id);
   if (sec.type === 'cards')      renderCards(sec);
   if (sec.type === 'glossary')   renderGlossary(sec);
   if (sec.type === 'calculator') renderCalc(sec);
@@ -345,6 +368,7 @@ function renderOffer(sec){
   bindBack();
   document.getElementById('cta').onclick = function(e){
     markDone(sec.id);
+    goal('to_channel');
     var url = DATA.app.channel_url;
     try {
       if (window.Telegram && Telegram.WebApp && Telegram.WebApp.openLink) {

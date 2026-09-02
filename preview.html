@@ -10,6 +10,12 @@
 </div>
 
 <script>
+/* ---- цели Метрики ---- */
+var YM_ID = 112174424;
+function goal(name){
+  try { if (typeof ym === 'function') ym(YM_ID, 'reachGoal', name); } catch (e) {}
+}
+
 /* ---- Telegram ---- */
 try {
   if (window.Telegram && Telegram.WebApp) {
@@ -45,7 +51,9 @@ function renderHome(){
         '<div class="txt"><b>' + esc(sec.title) + '</b><small>' + esc(sec.hint) + '</small></div>' +
         '<div class="tick"></div></div>';
     }).join('') + '</div>' +
-    '<div class="legal">' + esc(DATA.app.disclaimer) + '</div>';
+    '<div class="legal">' + esc(DATA.app.disclaimer) +
+      '<br><br>Приложение использует файлы cookie для анонимной статистики. ' +
+      '<a href="policy.html" class="policy-link">Политика обработки данных</a></div>';
 
   home.querySelectorAll('.item').forEach(function(el){
     el.onclick = function(){ openSection(el.dataset.id); };
@@ -61,7 +69,7 @@ function show(which){
   window.scrollTo(0, 0);
 }
 
-function markDone(id){ DONE[id] = true; saveDone(); }
+function markDone(id){ DONE[id] = true; saveDone(); goal('done_' + id); }
 
 function topbar(sec){
   return '<div class="topbar"><button class="back" id="back">←</button><h2>' +
@@ -76,6 +84,7 @@ function bindBack(){
 function openSection(id){
   var sec = DATA.sections.filter(function(x){ return x.id === id; })[0];
   if (!sec) return;
+  goal('open_' + id);
   if (sec.type === 'cards')      renderCards(sec);
   if (sec.type === 'glossary')   renderGlossary(sec);
   if (sec.type === 'calculator') renderCalc(sec);
@@ -209,6 +218,7 @@ function renderOffer(sec){
   bindBack();
   document.getElementById('cta').onclick = function(e){
     markDone(sec.id);
+    goal('to_channel');
     var url = DATA.app.channel_url;
     try {
       if (window.Telegram && Telegram.WebApp && Telegram.WebApp.openLink) {
