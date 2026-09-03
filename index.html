@@ -166,6 +166,32 @@ function goal(name){
   try { if (typeof ym === 'function') ym(YM_ID, 'reachGoal', name); } catch (e) {}
 }
 
+/* Страховка: если tag.js не догрузился (заблокирован, нет сети, старый вебвью),
+   ym остаётся заглушкой без метода .a → визит не запишется вообще.
+   Тогда через 4 секунды отправляем пиксель напрямую, как это делает <noscript>. */
+(function () {
+  var sent = false;
+  function beacon(reason) {
+    if (sent) return;
+    sent = true;
+    try {
+      var i = new Image();
+      i.src = 'https://mc.yandex.ru/watch/' + YM_ID +
+              '?rn=' + Math.floor(Math.random() * 1e6) +
+              '&page-url=' + encodeURIComponent(location.href) +
+              '&fallback=' + reason;
+    } catch (e) {}
+  }
+  setTimeout(function () {
+    var loaded = false;
+    try {
+      // когда tag.js отработал, ym перестаёт быть простой заглушкой с очередью .a
+      loaded = (typeof ym === 'function') && !ym.a;
+    } catch (e) {}
+    if (!loaded) beacon('nojs');
+  }, 4000);
+})();
+
 /* ---- Telegram ---- */
 try {
   if (window.Telegram && Telegram.WebApp) {
