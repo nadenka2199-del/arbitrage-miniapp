@@ -40,6 +40,15 @@
     -webkit-font-smoothing:antialiased}
   .wrap{max-width:520px;margin:0 auto;padding:20px 16px 40px}
 
+  /* ---------- плашка: бесплатный канал ---------- */
+  .tgbar{display:block;text-decoration:none;background:var(--surface);
+    border-bottom:1px solid rgba(201,162,39,.35);padding:11px 16px}
+  .tgbar .in{max-width:520px;margin:0 auto;display:flex;align-items:center;gap:10px}
+  .tgbar .t{flex:1;color:var(--text);font-size:13px;line-height:1.4}
+  .tgbar .t b{color:var(--gold);font-weight:600}
+  .tgbar .go{color:var(--gold);font-size:13px;white-space:nowrap}
+  @media(max-width:380px){.tgbar .t{font-size:12px}}
+
   /* ---------- главный экран ---------- */
   .head{padding:8px 0 20px}
   .head h1{margin:0 0 6px;font-family:var(--display);font-size:23px;font-weight:800;
@@ -154,6 +163,12 @@
 </style>
 </head>
 <body>
+<a class="tgbar" id="tgbar" href="https://t.me/firevadim" target="_blank" rel="noopener">
+  <span class="in">
+    <span class="t"><b>Бесплатный канал Вадима</b> — разборы, объяснения и живые примеры</span>
+    <span class="go">Открыть →</span>
+  </span>
+</a>
 <div class="wrap">
   <div id="home" class="screen on"></div>
   <div id="detail" class="screen"></div>
@@ -165,6 +180,12 @@ var YM_ID = 112271125;
 function goal(name){
   try { if (typeof ym === 'function') ym(YM_ID, 'reachGoal', name); } catch (e) {}
 }
+
+/* плашка бесплатного канала: считаем нажатия отдельной целью */
+(function () {
+  var b = document.getElementById('tgbar');
+  if (b) b.addEventListener('click', function () { goal('tg_bar'); });
+})();
 
 /* Страховка: если tag.js не догрузился (заблокирован, нет сети, старый вебвью),
    ym остаётся заглушкой без метода .a → визит не запишется вообще.
