@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>Открываем Telegram…</title>
+<!-- Yandex.Metrika counter -->
+<script type="text/javascript">
+    (function(m,e,t,r,i,k,a){
+        m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+        m[i].l=1*new Date();
+        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+    })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=112271125', 'ym');
+
+    ym(112271125, 'init', {ssr:true, clickmap:true, referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
+</script>
+<noscript><div><img src="https://mc.yandex.ru/watch/112271125" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+<!-- /Yandex.Metrika counter -->
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;height:100%}
+  body{background:#121212;color:#EDEDED;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+       display:flex;align-items:center;justify-content:center;text-align:center;padding:24px}
+  .c{max-width:340px}
+  h1{font-size:20px;font-weight:600;margin:0 0 10px}
+  p{color:#9A9A9A;font-size:14px;margin:0 0 22px}
+  a.btn{display:inline-block;border:1px solid #C9A227;color:#C9A227;text-decoration:none;
+        border-radius:10px;padding:13px 26px;font-size:15px}
+  .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#C9A227;margin:0 3px;
+       animation:b 1.2s infinite ease-in-out}
+  .dot:nth-child(2){animation-delay:.15s}.dot:nth-child(3){animation-delay:.3s}
+  @keyframes b{0%,80%,100%{opacity:.25}40%{opacity:1}}
+</style>
+</head>
+<body>
+<div class="c">
+  <div style="margin-bottom:18px"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+  <h1>Открываем Telegram</h1>
+  <p>Если ничего не произошло, нажмите кнопку.</p>
+  <a class="btn" id="go" href="https://t.me/firevadim">Перейти в канал</a>
+</div>
+<script>
+(function () {
+  var YM_ID = 112271125;
+  var TARGET = "https://t.me/firevadim";
+
+  // откуда пришёл человек: ?from=dzen, ?from=reels и т.д.
+  var from = (new URLSearchParams(location.search).get("from") || "direct")
+               .toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 24) || "direct";
+
+  document.getElementById("go").href = TARGET;
+
+  var jumped = false;
+  function jump() {
+    if (jumped) return;
+    jumped = true;
+    location.replace(TARGET);
+  }
+
+  // цель общая + отдельная по источнику, чтобы в Метрике было видно разбиение
+  try {
+    if (typeof ym === "function") {
+      ym(YM_ID, "reachGoal", "go_tg", { from: from });
+      ym(YM_ID, "reachGoal", "go_tg_" + from, {}, jump);
+    }
+  } catch (e) {}
+
+  // страховочный пиксель, если tag.js не догрузился (блокировщик, старый вебвью)
+  setTimeout(function () {
+    var loaded = false;
+    try { loaded = (typeof ym === "function") && !ym.a; } catch (e) {}
+    if (!loaded) {
+      try {
+        var i = new Image();
+        i.src = "https://mc.yandex.ru/watch/" + YM_ID +
+                "?rn=" + Math.floor(Math.random() * 1e6) +
+                "&page-url=" + encodeURIComponent(location.href) +
+                "&fallback=go_" + from;
+      } catch (e) {}
+    }
+  }, 1200);
+
+  // уходим в любом случае: колбэк Метрики мог не прийти
+  setTimeout(jump, 1400);
+})();
+</script>
+</body>
+</html>
