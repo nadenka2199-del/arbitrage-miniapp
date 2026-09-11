@@ -158,8 +158,8 @@
   .lessons li:last-child{border-bottom:0}
   .l-date{flex:0 0 92px;color:var(--gold);font-size:13px;letter-spacing:.02em}
   .l-body{display:block}
-  .l-title{font-size:15px;line-height:1.45;display:block}
-  .l-sub{display:block;color:var(--muted);font-size:13px;line-height:1.5;margin-top:3px}
+  .l-title{font-size:15px;line-height:1.45;display:block;text-wrap:balance}
+  .l-sub{display:block;color:var(--muted);font-size:13px;line-height:1.5;margin-top:3px;text-wrap:pretty}
   .block.after h3{color:var(--gold)}
   .block.after{border-color:rgba(201,162,39,.28)}
   .cta.ghost{background:transparent;color:var(--gold);
@@ -412,13 +412,17 @@ function renderCalc(sec){
   };
 }
 
+function nbsp(s){
+  return String(s).replace(/(^|\s)([А-Яа-яЁёA-Za-z]{1,2})\s/g, '$1$2\u00A0');
+}
+
 function renderProgram(sec){
   detail.innerHTML = topbar(sec) +
     '<p class="lead-text">' + esc(sec.lead) + '</p>' +
     '<ol class="lessons">' + sec.lessons.map(function(l){
       return '<li><span class="l-date">' + esc(l.date) + '</span>' +
-             '<span class="l-body"><span class="l-title">' + esc(l.title) + '</span>' +
-             (l.sub ? '<span class="l-sub">' + esc(l.sub) + '</span>' : '') +
+             '<span class="l-body"><span class="l-title">' + nbsp(esc(l.title)) + '</span>' +
+             (l.sub ? '<span class="l-sub">' + nbsp(esc(l.sub)) + '</span>' : '') +
              '</span></li>';
     }).join('') + '</ol>' +
     (sec.after_title
