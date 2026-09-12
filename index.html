@@ -239,14 +239,21 @@ try {
    ходит бот: по команде /stats Надежда видит открытия приложения рядом
    с нажатиями «оплатить». Ошибку глотаем: не ответил сервер — не беда. */
 (function () {
-  var inTg = false, uid = '';
+  var inTg = false, uid = '', src = '';
   try {
     inTg = !!(window.Telegram && Telegram.WebApp && Telegram.WebApp.initData);
     // id нужен, чтобы в /stats было видно не только «открыли: 4», но и кто
     uid = (Telegram.WebApp.initDataUnsafe.user || {}).id || '';
+    // метка площадки: t.me/aarbitrag_bot/app?startapp=b приходит сюда как start_param
+    src = Telegram.WebApp.initDataUnsafe.start_param || '';
   } catch (e) {}
+  if (!src) {
+    // то же самое для обычного браузера: ...github.io/arbitrage-miniapp/?from=dzen
+    try { src = (location.search.match(/[?&]from=([a-z0-9_-]{1,20})/i) || [])[1] || ''; } catch (e) {}
+  }
+  if (!src) src = inTg ? 'tg' : 'web';
   try {
-    fetch('https://tradelab-vadim.duckdns.org/api/hit?what=app_open&from=' + (inTg ? 'tg' : 'web') +
+    fetch('https://tradelab-vadim.duckdns.org/api/hit?what=app_open&from=' + encodeURIComponent(src) +
           (uid ? '&u=' + uid : ''),
           { method: 'POST', mode: 'cors', keepalive: true })['catch'](function () {});
   } catch (e) {}
