@@ -239,10 +239,15 @@ try {
    ходит бот: по команде /stats Надежда видит открытия приложения рядом
    с нажатиями «оплатить». Ошибку глотаем: не ответил сервер — не беда. */
 (function () {
-  var inTg = false;
-  try { inTg = !!(window.Telegram && Telegram.WebApp && Telegram.WebApp.initData); } catch (e) {}
+  var inTg = false, uid = '';
   try {
-    fetch('https://tradelab-vadim.duckdns.org/api/hit?what=app_open&from=' + (inTg ? 'tg' : 'web'),
+    inTg = !!(window.Telegram && Telegram.WebApp && Telegram.WebApp.initData);
+    // id нужен, чтобы в /stats было видно не только «открыли: 4», но и кто
+    uid = (Telegram.WebApp.initDataUnsafe.user || {}).id || '';
+  } catch (e) {}
+  try {
+    fetch('https://tradelab-vadim.duckdns.org/api/hit?what=app_open&from=' + (inTg ? 'tg' : 'web') +
+          (uid ? '&u=' + uid : ''),
           { method: 'POST', mode: 'cors', keepalive: true })['catch'](function () {});
   } catch (e) {}
 })();
